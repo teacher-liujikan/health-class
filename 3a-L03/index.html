@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>急救小尖兵冒險島</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: a sunny sea map with seven islands on a dotted route; each island opens a full-screen mission card. Single bright look on purpose. */
+:root{
+  --sea:#2a9fc4; --sea-deep:#16708f; --foam:#d9f3fb;
+  --sand:#ffe3a3; --sand-dark:#e8bf64; --leaf:#4bb06a; --leaf-dark:#2f8a4c;
+  --cross:#e4453a; --cross-dark:#b52f26; --sun:#ffc23d;
+  --ink:#16323f; --ink-soft:#4b6672; --paper:#fffaf0; --card:#ffffff;
+  --ok:#2f9e57; --ok-bg:#e3f6e9; --no:#d8443a; --no-bg:#fde7e4;
+  --display:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--sea); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.6;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,.10) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 80%, rgba(255,255,255,.08) 0 2px, transparent 3px);
+  background-size:46px 46px, 62px 62px;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:4px solid var(--sun);outline-offset:3px}
+
+.wrap{max-width:1120px;margin:0 auto;padding-block:18px 40px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+
+/* ---------- top bar ---------- */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:14px 20px;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.brand svg{flex:none}
+.brand h1{font-family:var(--display);font-weight:400;font-size:clamp(28px,5vw,44px);line-height:1.1;margin:0;color:#fff;
+  text-shadow:0 3px 0 var(--sea-deep);letter-spacing:.04em;text-wrap:balance}
+.brand p{margin:4px 0 0;color:var(--foam);font-size:15px}
+.hud{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.pill{background:var(--paper);border-radius:999px;padding:6px 14px;font-weight:700;display:flex;align-items:center;gap:6px;
+  box-shadow:0 3px 0 var(--sea-deep);font-variant-numeric:tabular-nums}
+.pill .star{color:var(--sun);font-size:20px;line-height:1;-webkit-text-stroke:1px #c98f00}
+.iconbtn{border:0;background:var(--paper);border-radius:999px;padding:6px 14px;font-weight:700;box-shadow:0 3px 0 var(--sea-deep)}
+.iconbtn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--sea-deep)}
+.certbtn{background:var(--sun);animation:glow 1.6s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 3px 0 #b07a00,0 0 0 6px rgba(255,194,61,.45)}}
+
+.intro{margin:16px 0 0;background:rgba(255,255,255,.14);color:#fff;border-radius:16px;padding:12px 16px;max-width:760px;font-size:16px}
+.intro b{color:var(--sun)}
+
+/* ---------- map ---------- */
+.map{position:relative;margin-top:18px;aspect-ratio:16/10.2;width:100%;max-width:100%;border-radius:28px;
+  background:radial-gradient(ellipse at 50% 40%, #3cb3d6 0%, var(--sea) 60%, var(--sea-deep) 100%);
+  box-shadow:inset 0 0 0 4px rgba(255,255,255,.25)}
+.route{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.route path{fill:none;stroke:#fff;stroke-width:3;stroke-dasharray:2 10;stroke-linecap:round;opacity:.8}
+.wave{position:absolute;color:rgba(255,255,255,.55);font-family:var(--display);font-size:22px;pointer-events:none;user-select:none}
+.compass{position:absolute;right:2%;bottom:3%;width:84px;height:84px;pointer-events:none}
+
+.island{position:absolute;transform:translate(-50%,-50%);border:0;background:none;padding:0;
+  display:flex;flex-direction:column;align-items:center;gap:2px;width:clamp(120px,15%,170px)}
+.island .art{width:100%;height:auto;display:block;transition:transform .2s;filter:drop-shadow(0 6px 0 rgba(10,60,80,.35))}
+.island:hover .art{transform:translateY(-6px) rotate(-2deg)}
+.island .plate{background:var(--paper);border-radius:14px;padding:4px 12px 5px;box-shadow:0 3px 0 var(--sand-dark);
+  display:flex;flex-direction:column;align-items:center;line-height:1.25;margin-top:-10px;position:relative;padding-left:22px}
+.island .num{position:absolute;left:-12px;top:-12px;width:28px;height:28px;border-radius:50%;background:var(--cross);color:#fff;
+  font-family:var(--display);font-size:16px;display:grid;place-items:center;box-shadow:0 2px 0 var(--cross-dark)}
+.island .name{font-family:var(--display);font-size:18px;white-space:nowrap}
+.island .stars{font-size:16px;letter-spacing:2px;color:#d6cbb3}
+.island .stars .on{color:var(--sun);-webkit-text-stroke:.6px #c98f00}
+.island.done .plate{background:#fff6d6}
+
+/* ---------- overlay / mission ---------- */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(12,52,68,.72);overflow-y:auto;
+  padding-top:calc(16px + env(safe-area-inset-top, 0px));padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+  padding-left:max(12px, env(safe-area-inset-left, 0px));padding-right:max(12px, env(safe-area-inset-right, 0px))}
+.panel{max-width:680px;margin:0 auto;background:var(--paper);border-radius:26px;overflow:hidden;box-shadow:0 10px 0 rgba(0,0,0,.18)}
+.phead{background:var(--sand);padding:14px 18px 12px;display:flex;align-items:center;gap:12px}
+.phead svg{flex:none;width:70px;height:auto}
+.phead .t{flex:1;min-width:0}
+.phead h2{font-family:var(--display);font-weight:400;margin:0;font-size:24px;line-height:1.2}
+.phead .sub{font-size:14px;color:var(--ink-soft)}
+.close{border:0;background:var(--paper);border-radius:999px;padding:6px 12px;font-weight:700;flex:none}
+.bar{height:10px;background:var(--sand-dark)}
+.bar i{display:block;height:100%;background:var(--cross);width:0;transition:width .3s}
+.stage{padding:20px 20px 24px}
+.qtag{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--sea-deep);background:var(--foam);border-radius:999px;padding:2px 10px}
+.q{font-size:21px;font-weight:700;margin:10px 0 16px;line-height:1.5;text-wrap:pretty}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.opts.six{grid-template-columns:repeat(3,minmax(0,1fr))}
+.opt{border:3px solid #e9dcc0;background:var(--card);border-radius:16px;padding:12px 14px;font-size:18px;font-weight:500;text-align:left;
+  min-height:60px;box-shadow:0 4px 0 #e9dcc0;transition:transform .08s}
+.opts.six .opt{text-align:center;font-family:var(--display);font-size:22px}
+.opt:hover:not(:disabled){border-color:var(--sea)}
+.opt:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #e9dcc0}
+.opt.right{border-color:var(--ok);background:var(--ok-bg);box-shadow:0 4px 0 var(--ok)}
+.opt.wrong{border-color:var(--no);background:var(--no-bg);box-shadow:0 4px 0 var(--no);opacity:.75}
+.opt:disabled{cursor:default}
+.tf{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tf .opt{text-align:center;font-family:var(--display);font-size:26px;min-height:90px;display:flex;align-items:center;justify-content:center;gap:10px}
+.tf .mark{font-size:40px;line-height:1}
+
+.slots{display:grid;gap:8px;margin-bottom:16px}
+.slot{display:flex;align-items:center;gap:10px;min-height:54px;border:3px dashed #d9c7a0;border-radius:14px;padding:6px 12px;background:#fffdf7}
+.slot .n{width:30px;height:30px;border-radius:50%;background:#e9dcc0;display:grid;place-items:center;font-weight:900;flex:none}
+.slot.filled{border-style:solid;border-color:var(--ok);background:var(--ok-bg)}
+.slot.filled .n{background:var(--ok);color:#fff}
+.slot.now{border-color:var(--sea);background:var(--foam)}
+.slot .txt{min-width:0}
+.pool{display:grid;gap:10px}
+.card{border:3px solid #e9dcc0;background:var(--card);border-radius:16px;padding:10px 14px;text-align:left;display:flex;gap:12px;align-items:center;
+  box-shadow:0 4px 0 #e9dcc0;font-size:17px}
+.card .k{font-family:var(--display);font-size:26px;color:var(--cross);flex:none;min-width:1.6em;text-align:center}
+.card.used{visibility:hidden}
+.shake{animation:shake .35s}
+@keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+
+.sentence{background:#fffdf7;border:3px solid #e9dcc0;border-radius:16px;padding:14px 16px;font-size:18px;line-height:2.1;margin-bottom:16px}
+.blank{display:inline-block;min-width:7em;border-bottom:3px solid #c9b48a;padding:0 6px;margin:0 2px;color:var(--ink-soft);font-size:15px;line-height:1.6;vertical-align:baseline;border-radius:6px 6px 0 0}
+.blank.now{background:var(--foam);border-color:var(--sea);color:var(--sea-deep)}
+.blank.filled{background:var(--ok-bg);border-color:var(--ok);color:var(--ink);font-size:18px;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{border:3px solid #e9dcc0;background:var(--card);border-radius:999px;padding:8px 16px;font-size:17px;box-shadow:0 3px 0 #e9dcc0}
+.chip.used{visibility:hidden}
+
+.fb{margin-top:18px;border-radius:18px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.fb.good{background:var(--ok-bg)}
+.fb.bad{background:var(--no-bg)}
+.fb .face{flex:none}
+.fb .msg{flex:1;min-width:0}
+.fb b{font-family:var(--display);font-weight:400;font-size:20px;display:block}
+.fb.good b{color:var(--ok)} .fb.bad b{color:var(--no)}
+.next{margin-top:14px;width:100%;border:0;border-radius:16px;background:var(--cross);color:#fff;font-family:var(--display);font-size:22px;padding:12px;box-shadow:0 5px 0 var(--cross-dark)}
+.next:active{transform:translateY(3px);box-shadow:0 2px 0 var(--cross-dark)}
+.next.alt{background:var(--sea);box-shadow:0 5px 0 var(--sea-deep)}
+
+.result{text-align:center;padding:10px 0}
+.result h3{font-family:var(--display);font-weight:400;font-size:30px;margin:8px 0}
+.bigstars{font-size:58px;letter-spacing:8px;color:#e2d6bb;line-height:1.2}
+.bigstars span{display:inline-block}
+.bigstars .on{color:var(--sun);-webkit-text-stroke:2px #c98f00;animation:pop .5s backwards}
+.bigstars .on:nth-child(2){animation-delay:.2s}.bigstars .on:nth-child(3){animation-delay:.4s}
+@keyframes pop{0%{transform:scale(0) rotate(-40deg)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
+.rowbtns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.qrbtn{border:0;background:#fff;border-radius:12px;padding:5px;box-shadow:0 3px 0 var(--sea-deep);display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px;line-height:1.2}
+.qrbtn .qrsvg{width:52px;height:52px;display:block}
+.qrbtn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--sea-deep)}
+.qrpanel{max-width:560px;text-align:center;padding:20px 20px 22px}
+.qrpanel h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0 0 4px}
+.qrpanel p{margin:0 0 14px;color:var(--ink-soft)}
+.qrpanel .qrsvg{width:min(440px,100%);height:auto;display:block;margin:0 auto 16px;border:6px solid var(--sand);border-radius:16px}
+/* certificate */
+.cert{padding:22px;text-align:center;border:6px double var(--cross);margin:16px;border-radius:18px;background:#fff}
+.cert h2{font-family:var(--display);font-weight:400;font-size:34px;margin:6px 0;color:var(--cross);letter-spacing:.1em}
+.cert .nm{font-family:var(--display);font-size:30px;border-bottom:3px solid var(--ink);display:inline-block;min-width:6em;padding:0 10px}
+.cert label{display:block;font-size:14px;color:var(--ink-soft);margin-top:14px}
+.cert input{font:inherit;font-size:20px;border:3px solid #e9dcc0;border-radius:12px;padding:6px 12px;width:min(260px,100%);text-align:center;margin-top:4px}
+.badges{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:14px 0}
+.badges svg{width:62px;height:auto}
+
+@media (max-width:720px){
+  .map{aspect-ratio:auto;display:flex;flex-direction:column;gap:18px;padding:22px 14px 30px}
+  .route,.wave,.compass{display:none}
+  .island{position:static;transform:none;width:min(200px,62%)}
+  .island:nth-of-type(odd){align-self:flex-start}
+  .island:nth-of-type(even){align-self:flex-end}
+  .opts.six{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .q{font-size:19px}
+}
+@media (max-width:440px){
+  .opts{grid-template-columns:1fr}
+  .opts.six{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+
+<style>[hidden]{display:none!important}body{margin:0}</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="62" height="62" viewBox="0 0 62 62" aria-hidden="true">
+        <circle cx="31" cy="31" r="29" fill="#fff" stroke="#16708f" stroke-width="3"/>
+        <path d="M24 12h14v12h12v14H38v12H24V38H12V24h12z" fill="#e4453a"/>
+      </svg>
+      <div>
+        <h1>急救小尖兵冒險島</h1>
+        <p><a href="../" style="color:#fff;font-weight:700">← 健康課首頁</a>　健體三上・第3課　急救小尖兵</p>
+      </div>
+    </div>
+    <div class="hud">
+      <span class="pill" title="收集到的星星"><span class="star">★</span><span id="starCount">0</span> / 21</span>
+      <span class="pill" title="完成的島嶼">島嶼 <span id="islandCount">0</span> / 7</span>
+      <button class="iconbtn" id="soundBtn" type="button" aria-pressed="true">音效：開</button>
+      <button class="iconbtn certbtn" id="certBtn" type="button" hidden>領取證書</button>
+      <button class="qrbtn" id="qrBtn" type="button" aria-label="放大這個網頁的 QR code"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 37" class="qrsvg" aria-hidden="true"><path fill="#fff" d="M0 0h37v37h-37z"/><path stroke="#16323f" d="M2 2.5h7m2 0h2m2 0h2m1 0h1m1 0h4m1 0h1m2 0h7m-33 1h1m5 0h1m3 0h6m2 0h1m1 0h2m2 0h1m1 0h1m5 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m2 0h3m1 0h1m2 0h1m2 0h2m1 0h1m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h1m1 0h5m1 0h3m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m1 0h2m3 0h1m1 0h1m1 0h1m1 0h3m2 0h1m1 0h3m1 0h1m-33 1h1m5 0h1m1 0h1m2 0h2m1 0h5m2 0h2m1 0h1m1 0h1m5 0h1m-33 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-25 1h1m1 0h1m3 0h2m4 0h3m-23 1h1m1 0h5m3 0h1m2 0h3m1 0h1m1 0h1m2 0h3m1 0h5m-30 1h2m1 0h2m3 0h1m2 0h1m3 0h1m1 0h6m2 0h2m1 0h2m1 0h1m-33 1h1m1 0h2m1 0h5m1 0h1m3 0h1m1 0h2m6 0h2m1 0h1m1 0h2m-30 1h1m1 0h2m1 0h2m3 0h1m1 0h3m2 0h1m1 0h4m3 0h4m-31 1h1m1 0h2m1 0h1m1 0h1m1 0h2m3 0h1m1 0h3m2 0h1m1 0h2m1 0h3m2 0h1m-33 1h1m1 0h4m2 0h1m1 0h2m2 0h3m1 0h1m1 0h4m1 0h2m2 0h1m1 0h2m-31 1h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m3 0h1m1 0h1m4 0h2m2 0h1m1 0h1m-28 1h1m2 0h1m1 0h1m1 0h1m4 0h1m3 0h2m1 0h5m2 0h1m-29 1h1m1 0h4m3 0h1m4 0h2m1 0h1m4 0h2m1 0h2m3 0h1m-31 1h2m6 0h2m1 0h1m2 0h6m1 0h1m1 0h3m1 0h2m1 0h1m-33 1h3m3 0h8m1 0h3m2 0h1m4 0h1m1 0h2m1 0h2m-28 1h1m2 0h1m1 0h1m4 0h2m4 0h3m1 0h1m2 0h4m1 0h1m-31 1h2m1 0h2m1 0h1m3 0h3m1 0h1m1 0h1m5 0h2m1 0h3m1 0h2m-33 1h1m3 0h1m6 0h1m1 0h1m1 0h1m1 0h3m3 0h1m2 0h1m2 0h1m2 0h1m-33 1h1m5 0h2m3 0h1m2 0h4m2 0h3m2 0h1m3 0h1m1 0h1m-32 1h1m2 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h2m2 0h1m2 0h2m6 0h4m-33 1h1m1 0h2m1 0h5m2 0h1m2 0h1m1 0h2m1 0h1m1 0h7m2 0h1m-24 1h7m1 0h1m1 0h3m3 0h1m3 0h1m1 0h1m1 0h1m-33 1h7m2 0h1m2 0h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h1m1 0h1m1 0h1m-31 1h1m5 0h1m1 0h1m3 0h2m2 0h1m1 0h1m2 0h4m3 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h3m1 0h4m2 0h2m4 0h6m-30 1h1m1 0h3m1 0h1m1 0h2m1 0h3m1 0h6m1 0h4m2 0h1m2 0h2m-33 1h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h1m2 0h1m2 0h5m1 0h2m2 0h1m-31 1h1m5 0h1m3 0h2m1 0h2m1 0h1m1 0h2m1 0h1m4 0h1m1 0h3m-31 1h7m1 0h1m2 0h1m1 0h1m3 0h1m4 0h1m1 0h1m2 0h1m3 0h1"/></svg><span>掃我<br>玩遊戲</span></button>
+    </div>
+  </header>
+
+  <p class="intro">發生緊急事故時，正確處理傷口、冷靜求救，就能幫助自己和別人！搭上小船，<b>闖過七座島嶼</b>的急救任務，每座島最多拿 3 顆星，全部完成就能領「急救小尖兵」證書。</p>
+
+  <main class="map" id="map" aria-label="島嶼地圖">
+    <svg class="route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M12 24 C20 10, 28 12, 34 16 S48 30, 56 26 S74 10, 82 20 S88 50, 76 58 S58 78, 50 72 S30 76, 20 66" vector-effect="non-scaling-stroke"/>
+    </svg>
+    <span class="wave" style="left:40%;top:44%">〰〰</span>
+    <span class="wave" style="left:6%;top:46%">〰</span>
+    <span class="wave" style="left:66%;top:40%">〰</span>
+    <span class="wave" style="left:88%;top:82%">〰〰</span>
+    <span class="wave" style="left:34%;top:90%">〰</span>
+    <svg class="compass" viewBox="0 0 84 84" aria-hidden="true">
+      <circle cx="42" cy="42" r="36" fill="rgba(255,255,255,.18)" stroke="#fff" stroke-width="2"/>
+      <path d="M42 10 L49 42 L42 74 L35 42 Z" fill="#fff"/><path d="M42 10 L49 42 L35 42 Z" fill="#e4453a"/>
+      <text x="42" y="9" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">N</text>
+    </svg>
+  </main>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+    <div class="phead">
+      <span id="pArt"></span>
+      <div class="t"><h2 id="pTitle"></h2><div class="sub" id="pSub"></div></div>
+      <button class="close" id="closeBtn" type="button">回地圖</button>
+    </div>
+    <div class="bar"><i id="pBar"></i></div>
+    <div class="stage" id="stage"></div>
+  </div>
+</div>
+
+<div class="overlay" id="certOverlay" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-label="急救小尖兵證書">
+    <div class="cert">
+      <svg width="70" height="70" viewBox="0 0 62 62" aria-hidden="true">
+        <circle cx="31" cy="31" r="29" fill="#fff" stroke="#e4453a" stroke-width="3"/>
+        <path d="M24 12h14v12h12v14H38v12H24V38H12V24h12z" fill="#e4453a"/>
+      </svg>
+      <h2>急救小尖兵</h2>
+      <p>恭喜</p>
+      <div class="nm" id="certName">　</div>
+      <p>闖過七座急救島嶼，學會處理擦傷、扭傷、燙傷<br>和撥打求救電話，成為合格的急救小尖兵！</p>
+      <div class="badges" id="certBadges"></div>
+      <p style="font-weight:700">共收集 <span id="certStars">0</span> 顆星　<span id="certDate"></span></p>
+      <label for="nameInput">寫上你的名字</label>
+      <input id="nameInput" type="text" maxlength="12" placeholder="我的名字" autocomplete="off">
+    </div>
+    <div style="padding:0 16px 18px"><button class="next alt" id="certClose" type="button">回地圖</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="qrOverlay" hidden>
+  <div class="panel qrpanel" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+    <h2 id="qrTitle">掃描 QR code 一起玩</h2>
+    <p>用平板或手機掃描，就能打開急救小尖兵冒險島</p>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 37" class="qrsvg" aria-hidden="true"><path fill="#fff" d="M0 0h37v37h-37z"/><path stroke="#16323f" d="M2 2.5h7m2 0h2m2 0h2m1 0h1m1 0h4m1 0h1m2 0h7m-33 1h1m5 0h1m3 0h6m2 0h1m1 0h2m2 0h1m1 0h1m5 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m2 0h3m1 0h1m2 0h1m2 0h2m1 0h1m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h1m1 0h5m1 0h3m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m1 0h2m3 0h1m1 0h1m1 0h1m1 0h3m2 0h1m1 0h3m1 0h1m-33 1h1m5 0h1m1 0h1m2 0h2m1 0h5m2 0h2m1 0h1m1 0h1m5 0h1m-33 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-25 1h1m1 0h1m3 0h2m4 0h3m-23 1h1m1 0h5m3 0h1m2 0h3m1 0h1m1 0h1m2 0h3m1 0h5m-30 1h2m1 0h2m3 0h1m2 0h1m3 0h1m1 0h6m2 0h2m1 0h2m1 0h1m-33 1h1m1 0h2m1 0h5m1 0h1m3 0h1m1 0h2m6 0h2m1 0h1m1 0h2m-30 1h1m1 0h2m1 0h2m3 0h1m1 0h3m2 0h1m1 0h4m3 0h4m-31 1h1m1 0h2m1 0h1m1 0h1m1 0h2m3 0h1m1 0h3m2 0h1m1 0h2m1 0h3m2 0h1m-33 1h1m1 0h4m2 0h1m1 0h2m2 0h3m1 0h1m1 0h4m1 0h2m2 0h1m1 0h2m-31 1h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m3 0h1m1 0h1m4 0h2m2 0h1m1 0h1m-28 1h1m2 0h1m1 0h1m1 0h1m4 0h1m3 0h2m1 0h5m2 0h1m-29 1h1m1 0h4m3 0h1m4 0h2m1 0h1m4 0h2m1 0h2m3 0h1m-31 1h2m6 0h2m1 0h1m2 0h6m1 0h1m1 0h3m1 0h2m1 0h1m-33 1h3m3 0h8m1 0h3m2 0h1m4 0h1m1 0h2m1 0h2m-28 1h1m2 0h1m1 0h1m4 0h2m4 0h3m1 0h1m2 0h4m1 0h1m-31 1h2m1 0h2m1 0h1m3 0h3m1 0h1m1 0h1m5 0h2m1 0h3m1 0h2m-33 1h1m3 0h1m6 0h1m1 0h1m1 0h1m1 0h3m3 0h1m2 0h1m2 0h1m2 0h1m-33 1h1m5 0h2m3 0h1m2 0h4m2 0h3m2 0h1m3 0h1m1 0h1m-32 1h1m2 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h2m2 0h1m2 0h2m6 0h4m-33 1h1m1 0h2m1 0h5m2 0h1m2 0h1m1 0h2m1 0h1m1 0h7m2 0h1m-24 1h7m1 0h1m1 0h3m3 0h1m3 0h1m1 0h1m1 0h1m-33 1h7m2 0h1m2 0h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h1m1 0h1m1 0h1m-31 1h1m5 0h1m1 0h1m3 0h2m2 0h1m1 0h1m2 0h4m3 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h3m1 0h4m2 0h2m4 0h6m-30 1h1m1 0h3m1 0h1m1 0h2m1 0h3m1 0h6m1 0h4m2 0h1m2 0h2m-33 1h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h1m2 0h1m2 0h5m1 0h2m2 0h1m-31 1h1m5 0h1m3 0h2m1 0h2m1 0h1m1 0h2m1 0h1m4 0h1m1 0h3m-31 1h7m1 0h1m2 0h1m1 0h1m3 0h1m4 0h1m1 0h1m2 0h1m3 0h1"/></svg>
+    <button class="next alt" id="qrClose" type="button">關閉</button>
+  </div>
+</div>
+
+<script>
+(function(){
+/* ---------- island art ---------- */
+function base(inner, sand){
+  sand = sand || '#ffe3a3';
+  return '<svg class="art" viewBox="0 0 160 120" aria-hidden="true">'+
+    '<ellipse cx="80" cy="96" rx="74" ry="18" fill="#bfe9f5" opacity=".7"/>'+
+    '<ellipse cx="80" cy="90" rx="66" ry="20" fill="'+sand+'"/>'+
+    '<ellipse cx="80" cy="84" rx="52" ry="14" fill="#4bb06a"/>'+ inner + '</svg>';
+}
+const palm = (x)=>'<path d="M'+x+' 84 q3 -22 -2 -38" stroke="#8a5a2b" stroke-width="4" fill="none"/>'+
+  '<path d="M'+(x-2)+' 46 q-14 -6 -22 4 M'+(x-2)+' 46 q12 -8 22 0 M'+(x-2)+' 46 q-4 -12 -14 -14 M'+(x-2)+' 46 q8 -12 18 -10" stroke="#2f8a4c" stroke-width="5" fill="none" stroke-linecap="round"/>';
+const ART = {
+  detective: base(palm(40)+
+    '<circle cx="96" cy="54" r="20" fill="#d9f3fb" stroke="#16323f" stroke-width="6"/>'+
+    '<path d="M110 68 L126 84" stroke="#16323f" stroke-width="8" stroke-linecap="round"/>'+
+    '<path d="M92 48h8v-0" stroke="#fff" stroke-width="4" stroke-linecap="round"/>'+
+    '<text x="96" y="62" text-anchor="middle" font-size="22" font-weight="900" fill="#e4453a">?</text>'),
+  lighthouse: base(
+    '<path d="M70 84 L74 30 h16 L94 84 Z" fill="#fff" stroke="#16323f" stroke-width="2"/>'+
+    '<path d="M72 64 h20 M73 48 h18" stroke="#e4453a" stroke-width="8"/>'+
+    '<rect x="72" y="18" width="20" height="14" rx="3" fill="#ffc23d" stroke="#16323f" stroke-width="2"/>'+
+    '<path d="M68 18 L82 6 L96 18 Z" fill="#e4453a"/>'+
+    '<path d="M96 24 L140 12 M96 26 L140 36" stroke="#ffc23d" stroke-width="3" opacity=".8"/>'+
+    '<g transform="translate(112 60)"><circle r="12" fill="#fff"/><path d="M-3 -8h6v5h5v6h-5v5h-6v-5h-5v-6h5z" fill="#e4453a"/></g>'),
+  bandage: base(palm(122)+
+    '<g transform="translate(70 58) rotate(-24)"><rect x="-40" y="-14" width="80" height="28" rx="14" fill="#f5c48f" stroke="#c98a4a" stroke-width="2"/>'+
+    '<rect x="-14" y="-14" width="28" height="28" fill="#fbe5c8"/>'+
+    '<g fill="#c98a4a"><circle cx="-28" cy="-5" r="2"/><circle cx="-28" cy="5" r="2"/><circle cx="-20" cy="0" r="2"/><circle cx="28" cy="-5" r="2"/><circle cx="28" cy="5" r="2"/><circle cx="20" cy="0" r="2"/></g></g>'),
+  iceberg: base(
+    '<path d="M40 84 L62 30 L76 46 L90 18 L120 84 Z" fill="#f2fbff" stroke="#7cc6dd" stroke-width="3"/>'+
+    '<path d="M62 30 L68 58 L76 46 M90 18 L94 60" stroke="#bfe6f2" stroke-width="3" fill="none"/>'+
+    '<rect x="100" y="56" width="26" height="22" rx="6" fill="#7cc6dd"/><text x="113" y="72" text-anchor="middle" font-size="13" font-weight="900" fill="#fff">冰</text>', '#e7f6fb'),
+  volcano: base(
+    '<path d="M36 84 L66 30 h28 L124 84 Z" fill="#b5703f"/>'+
+    '<path d="M66 30 h28 l-4 10 q-10 6 -20 0 Z" fill="#e4453a"/>'+
+    '<path d="M72 22 q-6 -8 2 -14 M82 20 q-6 -10 4 -16 M92 22 q-4 -8 4 -12" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>'+
+    '<g transform="translate(118 50)"><path d="M-12 -8 h24 v18 a10 10 0 0 1 -10 10 h-4 a10 10 0 0 1 -10 -10 Z" fill="#2a9fc4"/><path d="M-6 -4 q2 6 0 10 M2 -4 q2 6 0 10" stroke="#d9f3fb" stroke-width="2" fill="none"/></g>'),
+  harbor: base(
+    '<rect x="56" y="34" width="34" height="50" rx="4" fill="#e4453a"/>'+
+    '<rect x="62" y="40" width="22" height="16" rx="2" fill="#d9f3fb"/>'+
+    '<text x="73" y="74" text-anchor="middle" font-size="13" font-weight="900" fill="#fff">119</text>'+
+    '<path d="M60 34 L73 24 L86 34 Z" fill="#b52f26"/>'+
+    '<g transform="translate(112 66)"><rect x="-22" y="-14" width="44" height="22" rx="5" fill="#fff" stroke="#16323f" stroke-width="2"/><rect x="8" y="-11" width="10" height="9" fill="#d9f3fb"/>'+
+    '<path d="M-10 -8h4v4h4v4h-4v4h-4v-4h-4v-4h4z" fill="#e4453a"/><rect x="-6" y="-20" width="8" height="5" rx="2" fill="#2a9fc4"/><circle cx="-12" cy="9" r="5" fill="#16323f"/><circle cx="12" cy="9" r="5" fill="#16323f"/></g>'),
+  pharmacy: base(palm(36)+
+    '<rect x="62" y="44" width="58" height="40" fill="#fff" stroke="#16323f" stroke-width="2"/>'+
+    '<path d="M56 46 L91 22 L126 46 Z" fill="#2a9fc4"/>'+
+    '<rect x="84" y="62" width="14" height="22" fill="#ffc23d"/>'+
+    '<g transform="translate(91 36)"><path d="M-3 -9h6v6h6v6h-6v6h-6v-6h-6v-6h6z" fill="#4bb06a"/></g>'+
+    '<rect x="66" y="52" width="14" height="12" fill="#d9f3fb"/><rect x="102" y="52" width="14" height="12" fill="#d9f3fb"/>')
+};
+
+/* ---------- missions (from the lesson) ---------- */
+const TYPES6 = ['擦傷','扭傷','撞傷','切割傷','叮咬傷','燙傷'];
+const ISLANDS = [
+ {id:'detect', name:'傷口偵探島', art:'detective', x:12, y:24, sub:'受傷時先冷靜判斷傷勢',
+  steps:[
+   {t:'six', q:'跑步時跌倒，膝蓋磨破一層皮，有點滲血。', a:'擦傷', ex:'皮膚表面被地面磨破，是擦傷。'},
+   {t:'six', q:'下樓梯踩空，腳踝腫起來，痛到站不起來。', a:'扭傷', ex:'關節轉到不對的方向，就是扭傷。外表不一定有傷口。'},
+   {t:'six', q:'做美勞時，美工刀不小心劃過手指，流血了。', a:'切割傷', ex:'被刀子、銳利的東西劃開皮膚，是切割傷。'},
+   {t:'six', q:'吃飯時打翻湯碗，熱湯灑到腳上。', a:'燙傷', ex:'被熱湯、熱水等高溫的東西碰到，是燙傷。'},
+   {t:'six', q:'在草地上玩，手臂被蜜蜂叮了一下，又紅又腫。', a:'叮咬傷', ex:'被蚊子、蜜蜂等蟲子叮咬，是叮咬傷。'},
+   {t:'six', q:'彎腰撿鉛筆，頭撞到桌角，腫了一個包。', a:'撞傷', ex:'身體撞到硬的東西而腫起來，是撞傷。'}
+  ], shuffle:true},
+ {id:'bleed', name:'止血燈塔', art:'lighthouse', x:34, y:16, sub:'流血了！怎麼辦？',
+  steps:[
+   {t:'choice', q:'做勞作時被美工刀割傷，手流血了，可以先怎麼做？', o:['用乾淨的紗布或手帕壓住傷口，並把傷口抬高','用嘴巴吸傷口','不管它，繼續做勞作','用衛生紙在傷口上用力來回擦'], a:0, ex:'流血時，先用手掌或乾淨的布料（手帕、紗布）壓住並抬高傷口止血，必要時可以配合冰敷。'},
+   {t:'choice', q:'用消毒紗布加壓止血時，受傷的地方要抬高到哪裡？', o:['高於心臟','低於腰部','放在地上','怎麼放都可以'], a:0, ex:'把傷口抬高到比心臟高，再在紗布上冰敷，可以幫助止血。'},
+   {t:'choice', q:'流鼻血時，頭應該怎麼擺？', o:['頭往前傾，用紗布輕壓鼻翼並冰敷','頭往後仰','馬上躺平','用力擤鼻涕'], a:0, ex:'流鼻血時頭要往前傾，用消毒紗布輕壓鼻翼，再冰敷止血。'},
+   {t:'tf', q:'幫別人止血時，可以直接用手碰別人的血。', a:false, ex:'幫別人止血時，不要接觸到別人的血液，要用紗布或乾淨的布隔開。'},
+   {t:'tf', q:'家庭急救箱裡的急救用品和藥品，要定期更換。', a:true, ex:'急救箱要備好簡易急救用品和藥品，而且要定期檢查、更換。'},
+   {t:'choice', q:'在學校受傷了，應該怎麼做？', o:['立刻到健康中心請護理師處理','躲在廁所不讓別人知道','回教室繼續上課','自己先回家'], a:0, ex:'在學校受傷要立刻到健康中心，請護理師協助，以免失血過多或傷口感染。'}
+  ]},
+ {id:'care', name:'沖擦敷看灣', art:'bandage', x:56, y:26, sub:'開放性傷口的處理',
+  steps:[
+   {t:'order', q:'擦傷了！請依照正確順序，點選傷口照護四步驟。', items:[
+     {k:'沖', t:'用生理食鹽水或清水，把傷口周圍沖洗乾淨'},
+     {k:'擦', t:'擦乾傷口周圍，再用棉花棒塗抹藥膏'},
+     {k:'敷', t:'用紗布或人工皮蓋住傷口，每天換藥1～2次'},
+     {k:'看', t:'如果傷口紅腫或刺痛，要去看醫生'}], ex:'記住口訣「沖、擦、敷、看」！'},
+   {t:'choice', q:'想要傷口好得快、不感染發炎，最重要的是什麼？', o:['把傷口沖洗乾淨','一直用手摸傷口','把結痂撕掉','用嘴巴吹一吹'], a:0, ex:'預防感染發炎，沖洗乾淨最重要。'},
+   {t:'choice', q:'在傷口上塗藥膏，要用什麼塗？', o:['乾淨的棉花棒','自己的手指','鉛筆','用過的衛生紙'], a:0, ex:'用乾淨的棉花棒確實塗抹藥膏，傷口比較不會留疤。'},
+   {t:'choice', q:'傷口蓋上紗布或人工皮後，一天大約要換藥幾次？', o:['1～2次','10次','一個星期1次','都不用換'], a:0, ex:'敷料要每天換藥1～2次，保持傷口乾淨。'},
+   {t:'tf', q:'傷口出現紅腫、刺痛，忍一忍就好，不用看醫生。', a:false, ex:'傷口紅腫或刺痛，可能是感染了，一定要去看醫生。'}
+  ]},
+ {id:'sprain', name:'扭傷冰山', art:'iceberg', x:83, y:22, sub:'扭傷了！怎麼辦？',
+  steps:[
+   {t:'choice', q:'朋友下樓梯踩空，腳踝扭傷站不起來，你應該怎麼做？', o:['請她留在原地不要動，去找人幫忙','用力把她拉起來走路','揹著她跑回家','叫她跳跳看還痛不痛'], a:0, ex:'扭傷時不能隨意搬動傷患，要立刻找大人或醫護人員幫忙，不然傷勢會變嚴重。'},
+   {t:'order', q:'朋友扭傷了！請依照順序點選現場的處理方法。', items:[
+     {k:'1', t:'請傷患在現場保持不動'},
+     {k:'2', t:'尋求協助，或打電話求救'},
+     {k:'3', t:'向附近店家詢問能不能給冰塊，幫傷患冰敷'},
+     {k:'4', t:'陪伴並安撫傷患，直到師長抵達'}], ex:'不動、求救、冰敷、陪伴，你是很棒的小幫手！', hideKey:true},
+   {t:'order', q:'扭傷後的照護有五個步驟，請依照順序點選。', items:[
+     {k:'冰敷', t:'立刻冰敷，減緩腫脹'},
+     {k:'就醫', t:'就算沒有明顯外傷，也要看醫生確認'},
+     {k:'消炎止痛', t:'要吃藥減輕疼痛，必須遵從醫師指示'},
+     {k:'固定', t:'用醫用繃帶固定扭傷部位，預防二次傷害'},
+     {k:'熱敷', t:'不腫也不痛了，再熱敷改善血液循環'}], ex:'冰敷→就醫→消炎止痛→固定→熱敷。'},
+   {t:'tf', q:'冰敷時，冰袋可以直接貼在皮膚上。', a:false, ex:'冰袋不要直接接觸皮膚，以免凍傷，可以先包一層毛巾。'},
+   {t:'tf', q:'有流血的傷口時，要停止冰敷。', a:true, ex:'有出血傷口時要停止冰敷，避免影響傷口癒合。'},
+   {t:'choice', q:'扭傷後，什麼時候才可以熱敷？', o:['已經不腫也不痛的時候','剛扭傷時馬上熱敷','腫得最厲害的時候','有流血的時候'], a:0, ex:'扭傷部位不腫、不痛以後才熱敷，溫度比體溫高一點就好。'}
+  ]},
+ {id:'burn', name:'燙傷火山', art:'volcano', x:77, y:60, sub:'燙傷了！怎麼辦？',
+  steps:[
+   {t:'order', q:'熱湯灑到腳上了！請依照順序點選燙傷處理五步驟。', items:[
+     {k:'沖', t:'用流動的冷水沖洗15～30分鐘'},
+     {k:'脫', t:'在水中脫掉衣物'},
+     {k:'泡', t:'把燙傷處泡在冷水中15～20分鐘'},
+     {k:'蓋', t:'用乾淨的消毒紗布蓋住傷口'},
+     {k:'送', t:'補充傷患水分，並立刻送醫'}], ex:'口訣「沖、脫、泡、蓋、送」！'},
+   {t:'choice', q:'燙傷的地方有衣服蓋住，要怎麼辦？', o:['先泡冷水，在水中把衣服脫掉','用力把衣服撕下來','改用熱水沖','不用管衣服'], a:0, ex:'傷口外有衣物時，要先浸泡冷水，在水中脫掉衣物，才不會傷到皮膚。'},
+   {t:'tf', q:'送醫前，要趕快在燙傷的地方塗藥膏或藥粉。', a:false, ex:'送醫前不要在傷口上塗藥膏或藥粉，會讓醫護人員處理傷口時很困擾，延誤醫療時間。'},
+   {t:'tf', q:'燙傷後的傷口不能碰到水，要依照護理師說的方法換藥。', a:true, ex:'護理師提醒，傷口不能碰到水，一天換一次藥，就能在家照顧傷口。'},
+   {t:'choice', q:'燙傷的傷口如果化膿，或出現發燒，該怎麼做？', o:['立刻就醫','等它自己好','自己把膿擠掉','多曬太陽'], a:0, ex:'傷口化膿或發燒，都要立刻就醫！'}
+  ]},
+ {id:'call', name:'救援電話港', art:'harbor', x:50, y:76, sub:'英勇救援隊，冷靜求救',
+  steps:[
+   {t:'choice', q:'有人受傷一直流血，需要救護車，要打幾號？', o:['110','119','112'], a:1, ex:'119是消防局、救護車的報案電話。'},
+   {t:'choice', q:'家附近發生火災，要打幾號？', o:['110','119','112'], a:1, ex:'火災也要打119，找消防隊。'},
+   {t:'choice', q:'看到有壞人在搶東西，要打幾號報警？', o:['110','119','112'], a:0, ex:'110是警察局的報案電話。'},
+   {t:'choice', q:'遇到緊急狀況，手機卻沒有訊號，可以打幾號？', o:['110','119','112'], a:2, ex:'手機沒訊號時，可以撥打112。'},
+   {t:'fill', q:'練習報案！依照順序點選，把求救電話說完整。',
+     parts:['我是承恩，在',{label:'地標',a:'健康國小的便利商店'},'附近，有機車對撞，',{label:'傷患狀況',a:'一名騎士倒在路邊不停流血'},'，',{label:'聯絡方式',a:'我的電話號碼是……'},'，請趕快派救護車來。'],
+     extra:['我今天早餐吃蛋餅','那邊好像怪怪的','我不知道'], ex:'報案時要說清楚「地標、傷患狀況、聯絡方式」，救護人員才能快點趕到！'},
+   {t:'tf', q:'惡作劇亂打119是違法的，會被罰錢。', a:true, ex:'無故撥打消防報案電話是違法行為，會被罰新臺幣3,000元以上15,000元以下，也會增加救護人員的負擔。'},
+   {t:'tf', q:'開車時聽到救護車的警笛聲，可以不用讓路。', a:false, ex:'救護車要替傷患爭取治療的黃金時間。不讓路會被罰新臺幣3,600元，還會吊銷駕照。'}
+  ]},
+ {id:'shop', name:'社區藥局島', art:'pharmacy', x:20, y:66, sub:'醫療器材與藥品',
+  steps:[
+   {t:'choice', q:'擦傷要沖洗傷口周圍，可以用哪一個？', o:['生理食鹽水','熱敷袋','醫用繃帶','消炎止痛藥'], a:0, ex:'用生理食鹽水或清水沖洗傷口周圍。'},
+   {t:'choice', q:'剛扭傷，腳踝腫起來了，可以用哪一個？', o:['熱敷袋','冰敷袋','人工皮','棉花棒'], a:1, ex:'扭傷會腫脹，立即冰敷可以減緩腫脹。'},
+   {t:'choice', q:'扭傷部位要固定好，預防二次傷害，要用哪一個？', o:['生理食鹽水','冰敷袋','醫用繃帶','棉花棒'], a:2, ex:'用醫用繃帶固定扭傷部位。'},
+   {t:'choice', q:'扭傷已經不腫不痛了，想改善血液循環，要用哪一個？', o:['熱敷袋','冰敷袋','消毒紗布','人工皮'], a:0, ex:'不腫不痛時才用熱敷袋。'},
+   {t:'choice', q:'OK繃屬於哪一種敷料？', o:['傳統織物敷料','合成敷料','生物性敷料'], a:1, ex:'紗布、棉墊是傳統織物敷料；OK繃是合成敷料；人工皮是生物性敷料。'},
+   {t:'order', q:'選購醫療器材有三步驟，請依照順序點選。', items:[
+     {k:'會認', t:'認識醫療器材'},
+     {k:'會看', t:'確認有沒有醫療許可證字號'},
+     {k:'會用', t:'使用前詳細閱讀說明書，正確使用'}], ex:'會認、會看、會用，買到合格的醫療器材！'}
+  ]}
+];
+
+/* ---------- state ---------- */
+let progress = {};
+let soundOn = true;
+let playerName = '';
+const LS = 'firstAidIsland.v1';
+function load(){ try{ const d = JSON.parse(localStorage.getItem(LS)||'{}'); progress = d.progress||{}; playerName = d.name||''; if(d.sound===false) soundOn=false; }catch(e){} }
+function save(){ try{ localStorage.setItem(LS, JSON.stringify({progress, name:playerName, sound:soundOn})); }catch(e){} }
+
+/* ---------- sound ---------- */
+let ac = null;
+function tone(freqs, dur){
+  if(!soundOn) return;
+  try{
+    ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+    freqs.forEach((f,i)=>{
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'triangle'; o.frequency.value = f;
+      const t0 = ac.currentTime + i*dur;
+      g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(.18,t0+.02); g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+      o.connect(g).connect(ac.destination); o.start(t0); o.stop(t0+dur+.02);
+    });
+  }catch(e){}
+}
+const sOk = ()=>tone([660,880],.12), sNo = ()=>tone([220,180],.14), sWin = ()=>tone([523,659,784,1047],.13);
+
+/* ---------- helpers ---------- */
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function starsFor(m){ return m===0?3:(m<=2?2:1); }
+function starStr(n, cls){ let s=''; for(let i=0;i<3;i++) s+='<span class="'+(i<n?'on':'')+'">★</span>'; return s; }
+const FACE_OK = '<svg class="face" width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="20" fill="#ffc23d"/><circle cx="15" cy="18" r="2.5" fill="#16323f"/><circle cx="29" cy="18" r="2.5" fill="#16323f"/><path d="M13 26 q9 9 18 0" stroke="#16323f" stroke-width="3" fill="none" stroke-linecap="round"/></svg>';
+const FACE_NO = '<svg class="face" width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="20" fill="#ffd9a0"/><circle cx="15" cy="18" r="2.5" fill="#16323f"/><circle cx="29" cy="18" r="2.5" fill="#16323f"/><path d="M15 30 q7 -4 14 0" stroke="#16323f" stroke-width="3" fill="none" stroke-linecap="round"/></svg>';
+
+/* ---------- map ---------- */
+function renderMap(){
+  const map = $('#map');
+  map.querySelectorAll('.island').forEach(n=>n.remove());
+  ISLANDS.forEach((is,i)=>{
+    const st = progress[is.id]||0;
+    const b = document.createElement('button');
+    b.type='button'; b.className='island'+(st?' done':'');
+    b.style.left = is.x+'%'; b.style.top = is.y+'%';
+    b.setAttribute('aria-label', '第'+(i+1)+'站 '+is.name+(st?'，已得 '+st+' 顆星':''));
+    b.innerHTML = ART[is.art]+'<span class="plate"><span class="num">'+(i+1)+'</span><span class="name">'+is.name+'</span><span class="stars">'+starStr(st)+'</span></span>';
+    b.addEventListener('click',()=>openIsland(i));
+    map.appendChild(b);
+  });
+  const total = ISLANDS.reduce((s,is)=>s+(progress[is.id]||0),0);
+  const done = ISLANDS.filter(is=>progress[is.id]).length;
+  $('#starCount').textContent = total;
+  $('#islandCount').textContent = done;
+  $('#certBtn').hidden = done < ISLANDS.length;
+}
+
+/* ---------- mission engine ---------- */
+let cur = null;
+function openIsland(i){
+  const is = ISLANDS[i];
+  let steps = is.shuffle ? shuffle(is.steps) : is.steps.slice();
+  steps = steps.map(s=>{
+    if(s.t==='choice' && s.o.length>3){ const idx = shuffle(s.o.map((_,k)=>k)); return Object.assign({},s,{o:idx.map(k=>s.o[k]), a:idx.indexOf(s.a)}); }
+    return s;
+  });
+  cur = {i, is, steps, qi:0, mistakes:0, answered:false};
+  $('#pArt').innerHTML = ART[is.art];
+  $('#pTitle').textContent = is.name;
+  $('#pSub').textContent = is.sub;
+  $('#overlay').hidden = false;
+  document.body.style.overflow='hidden';
+  renderStep();
+  $('#closeBtn').focus();
+}
+function closeIsland(){ $('#overlay').hidden = true; document.body.style.overflow=''; cur=null; renderMap(); }
+
+function setBar(){ $('#pBar').style.width = (cur.qi/cur.steps.length*100)+'%'; }
+
+function renderStep(){
+  setBar();
+  const s = cur.steps[cur.qi];
+  cur.answered = false;
+  const st = $('#stage');
+  const head = '<span class="qtag">第 '+(cur.qi+1)+' / '+cur.steps.length+' 題</span><div class="q">'+esc(s.q)+'</div>';
+  if(s.t==='six'){
+    st.innerHTML = head+'<div class="opts six">'+TYPES6.map(o=>'<button type="button" class="opt" data-v="'+esc(o)+'">'+esc(o)+'</button>').join('')+'</div><div id="fb"></div>';
+    st.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>pick(b, b.dataset.v===s.a)));
+  } else if(s.t==='choice'){
+    st.innerHTML = head+'<div class="opts">'+s.o.map((o,k)=>'<button type="button" class="opt" data-k="'+k+'">'+esc(o)+'</button>').join('')+'</div><div id="fb"></div>';
+    st.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>pick(b, +b.dataset.k===s.a)));
+  } else if(s.t==='tf'){
+    st.innerHTML = head+'<div class="tf">'+
+      '<button type="button" class="opt" data-v="1"><span class="mark" style="color:#2f9e57">○</span>對</button>'+
+      '<button type="button" class="opt" data-v="0"><span class="mark" style="color:#d8443a">✕</span>錯</button></div><div id="fb"></div>';
+    st.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+      if(cur.answered) return;
+      const ok = (b.dataset.v==='1')===s.a;
+      cur.answered = true;
+      st.querySelectorAll('.opt').forEach(x=>x.disabled=true);
+      if(ok){ b.classList.add('right'); sOk(); }
+      else { b.classList.add('wrong'); cur.mistakes++; sNo(); st.querySelector('.opt[data-v="'+(s.a?'1':'0')+'"]').classList.add('right'); }
+      feedback(ok, s.ex, ok?null:('正確答案是「'+(s.a?'對':'錯')+'」'));
+    }));
+  } else if(s.t==='order'){
+    const order = shuffle(s.items.map((_,k)=>k));
+    st.innerHTML = head+
+      '<div class="slots">'+s.items.map((_,k)=>'<div class="slot'+(k===0?' now':'')+'" data-k="'+k+'"><span class="n">'+(k+1)+'</span><span class="txt"></span></div>').join('')+'</div>'+
+      '<div class="pool">'+order.map(k=>'<button type="button" class="card" data-k="'+k+'">'+(s.hideKey?'':'<span class="k">'+esc(s.items[k].k)+'</span>')+'<span>'+esc(s.items[k].t)+'</span></button>').join('')+'</div><div id="fb"></div>';
+    let placed = 0;
+    st.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>{
+      if(cur.answered) return;
+      const k = +c.dataset.k;
+      if(k===placed){
+        const it = s.items[k];
+        const slot = st.querySelector('.slot[data-k="'+k+'"]');
+        slot.classList.remove('now'); slot.classList.add('filled');
+        slot.querySelector('.txt').innerHTML = (s.hideKey?'':'<b style="color:#e4453a;font-family:var(--display);font-size:20px">'+esc(it.k)+'</b>　')+esc(it.t);
+        c.classList.add('used'); c.disabled = true;
+        placed++; sOk();
+        const nx = st.querySelector('.slot[data-k="'+placed+'"]'); if(nx) nx.classList.add('now');
+        if(placed===s.items.length){ cur.answered = true; st.querySelector('.pool').hidden = true; feedback(true, s.ex); }
+      } else {
+        cur.mistakes++; sNo();
+        c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake');
+        flash('還不是這一步，想想看第 '+(placed+1)+' 步要做什麼？');
+      }
+    }));
+  } else if(s.t==='fill'){
+    const slots = s.parts.filter(p=>typeof p!=='string');
+    const chips = shuffle(slots.map(p=>p.a).concat(s.extra));
+    let n = 0;
+    const sent = s.parts.map(p=>{
+      if(typeof p==='string') return esc(p);
+      const idx = slots.indexOf(p);
+      return '<span class="blank'+(idx===0?' now':'')+'" data-i="'+idx+'">'+esc(p.label)+'</span>';
+    }).join('');
+    st.innerHTML = head+'<div class="sentence">'+sent+'</div><div class="chips">'+chips.map(c=>'<button type="button" class="chip">'+esc(c)+'</button>').join('')+'</div><div id="fb"></div>';
+    st.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+      if(cur.answered) return;
+      if(c.textContent===slots[n].a){
+        const bl = st.querySelector('.blank[data-i="'+n+'"]');
+        bl.textContent = slots[n].a; bl.classList.remove('now'); bl.classList.add('filled');
+        c.classList.add('used'); c.disabled = true; n++; sOk();
+        const nx = st.querySelector('.blank[data-i="'+n+'"]'); if(nx) nx.classList.add('now');
+        if(n===slots.length){ cur.answered = true; st.querySelector('.chips').hidden = true; feedback(true, s.ex); }
+      } else {
+        cur.mistakes++; sNo();
+        c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake');
+        flash('這裡要說的是「'+slots[n].label+'」，再找找看！');
+      }
+    }));
+  }
+}
+
+function pick(b, ok){
+  if(cur.answered || b.disabled) return;
+  const s = cur.steps[cur.qi];
+  if(ok){
+    cur.answered = true; b.classList.add('right'); sOk();
+    $('#stage').querySelectorAll('.opt').forEach(x=>x.disabled=true);
+    feedback(true, s.ex);
+  } else {
+    b.classList.add('wrong'); b.disabled = true; cur.mistakes++; sNo();
+    flash('再想想看，選另一個答案！');
+  }
+}
+
+function flash(msg){
+  const fb = $('#fb');
+  fb.innerHTML = '<div class="fb bad" role="status">'+FACE_NO+'<div class="msg"><b>差一點點！</b>'+esc(msg)+'</div></div>';
+}
+const PRAISE = ['答對了！','太厲害了！','完全正確！','你是急救高手！','好棒！'];
+function feedback(ok, ex, extra){
+  const fb = $('#fb');
+  const last = cur.qi===cur.steps.length-1;
+  fb.innerHTML = '<div class="fb '+(ok?'good':'bad')+'" role="status">'+(ok?FACE_OK:FACE_NO)+'<div class="msg"><b>'+(ok?PRAISE[Math.floor(Math.random()*PRAISE.length)]:'沒關係，記起來！')+'</b>'+(extra?esc(extra)+'。':'')+esc(ex)+'</div></div>'+
+    '<button type="button" class="next" id="nextBtn">'+(last?'看結果':'下一題')+'</button>';
+  const nb = $('#nextBtn'); nb.addEventListener('click', next); nb.focus({preventScroll:true});
+  nb.scrollIntoView({block:'nearest', behavior:'smooth'});
+}
+function next(){
+  cur.qi++;
+  if(cur.qi>=cur.steps.length) return finish();
+  renderStep();
+  $('#overlay').scrollTop = 0;
+}
+function finish(){
+  setBar();
+  const got = starsFor(cur.mistakes);
+  const prev = progress[cur.is.id]||0;
+  if(got>prev){ progress[cur.is.id]=got; save(); }
+  sWin();
+  const allDone = ISLANDS.every(is=>progress[is.id]);
+  const msg = got===3?'全部一次答對，滿分過關！':(got===2?'很棒！再挑戰一次拿滿三顆星吧！':'完成任務！多練習幾次會更厲害！');
+  $('#stage').innerHTML = '<div class="result"><div class="bigstars">'+starStr(got)+'</div><h3>'+esc(cur.is.name)+' 過關！</h3><p>'+msg+'<br>答錯次數：'+cur.mistakes+'　最佳紀錄：'+Math.max(got,prev)+' 顆星</p>'+
+    (allDone?'<p style="font-weight:700;color:#e4453a">七座島嶼都完成了！回地圖領取證書吧！</p>':'')+
+    '<div class="rowbtns"><button type="button" class="next alt" id="againBtn">再玩一次</button><button type="button" class="next" id="mapBtn">回地圖</button></div></div>';
+  const i = cur.i;
+  $('#againBtn').addEventListener('click',()=>openIsland(i));
+  $('#mapBtn').addEventListener('click',closeIsland);
+  $('#mapBtn').focus();
+}
+
+/* ---------- certificate ---------- */
+function openCert(){
+  const total = ISLANDS.reduce((s,is)=>s+(progress[is.id]||0),0);
+  $('#certStars').textContent = total;
+  const d = new Date(); $('#certDate').textContent = d.getFullYear()+' 年 '+(d.getMonth()+1)+' 月 '+d.getDate()+' 日';
+  $('#certBadges').innerHTML = ISLANDS.map(is=>ART[is.art]).join('');
+  $('#nameInput').value = playerName;
+  $('#certName').textContent = playerName || '　';
+  $('#certOverlay').hidden = false; document.body.style.overflow='hidden';
+  sWin();
+}
+$('#nameInput').addEventListener('input',e=>{ playerName = e.target.value.trim(); $('#certName').textContent = playerName||'　'; save(); });
+$('#certClose').addEventListener('click',()=>{ $('#certOverlay').hidden = true; document.body.style.overflow=''; });
+$('#certBtn').addEventListener('click',openCert);
+$('#closeBtn').addEventListener('click',closeIsland);
+function closeQR(){ $('#qrOverlay').hidden = true; document.body.style.overflow=''; $('#qrBtn').focus(); }
+$('#qrBtn').addEventListener('click',()=>{ $('#qrOverlay').hidden = false; document.body.style.overflow='hidden'; $('#qrClose').focus(); });
+$('#qrClose').addEventListener('click',closeQR);
+$('#qrOverlay').addEventListener('click',e=>{ if(e.target.id==='qrOverlay') closeQR(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(!$('#qrOverlay').hidden){ closeQR(); } else if(!$('#certOverlay').hidden){ $('#certClose').click(); } else if(cur){ closeIsland(); } } });
+$('#soundBtn').addEventListener('click',()=>{ soundOn=!soundOn; updSound(); save(); if(soundOn) sOk(); });
+function updSound(){ $('#soundBtn').textContent = '音效：'+(soundOn?'開':'關'); $('#soundBtn').setAttribute('aria-pressed', String(soundOn)); }
+
+/* ---------- boot ---------- */
+function start(data){
+  load();
+  if(data && data.progress){ progress = Object.assign({}, progress, data.progress); }
+  updSound(); renderMap();
+}
+window.claude?.hot?.snapshot?.(()=>({progress}));
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+})();
+</script>
+
+</body>
+</html>
