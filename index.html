@@ -19,6 +19,7 @@ header p{margin:4px 0 0;color:#d9f3fb}
 h2{font-family:var(--display);font-weight:400;color:#fff;font-size:26px;margin:32px 0 12px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
 a.card{display:block;background:var(--paper);border-radius:22px;padding:18px 20px;text-decoration:none;color:inherit;box-shadow:0 6px 0 var(--deep);transition:transform .15s}
+.card .thumb{display:block;width:calc(100% + 40px);max-width:none;margin:-18px -20px 12px;aspect-ratio:16/9;object-fit:cover;object-position:50% 88%;border-radius:22px 22px 0 0}
 a.card:hover{transform:translateY(-4px)}
 a.card:focus-visible{outline:4px solid #ffc23d;outline-offset:3px}
 .tag{display:inline-block;background:var(--sand);border-radius:999px;padding:2px 10px;font-size:13px;font-weight:700}
@@ -44,6 +45,7 @@ footer{margin-top:36px;color:#d9f3fb;font-size:16px}
     <div class="go">開始冒險 →</div>
   </a>
   <a class="card" href="3a-L03-battle/">
+    <img class="thumb" src="3a-L03-battle/cover.webp" alt="">
     <span class="tag">第3課・兩隊競賽</span>
     <h3>急救搶救大作戰</h3>
     <p>紅藍兩隊同時搶救！把正確的物品拖到傷患身上：燙傷、擦傷、止血、扭傷、流鼻血、求救電話。適合用教室觸控電視。</p>
